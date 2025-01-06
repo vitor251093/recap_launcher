@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <memory>
 
-constexpr int PROCESS_ALL_ACCESS = 0x1F0FFF;
-constexpr int PAGE_READWRITE = 0x40;
-
 bool OverwriteMemory(HANDLE hProcess, uintptr_t address, const std::vector<uint8_t>& buffer) {
     DWORD oldProtect;
     if (!VirtualProtectEx(hProcess, reinterpret_cast<LPVOID>(address), buffer.size(), PAGE_READWRITE, &oldProtect)) {
