@@ -39,4 +39,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: recap-launcher-windows-x64
-          path: ${{runner.workspace}}/recap_launcher/build
+          path: ${{runner.workspace}}/recap_launcher/build/recap_launcher.exe
