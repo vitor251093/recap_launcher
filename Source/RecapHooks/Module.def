@@ -1,0 +1,3 @@
+LIBRARY RecapHooks
+    EXPORTS
+        DetourFinishHelperProcess @1 NONAME
