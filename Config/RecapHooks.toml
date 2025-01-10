@@ -1,5 +1,6 @@
 [host]
 name = "localhost"
+port = 80
 
 [host.resolver]
 
