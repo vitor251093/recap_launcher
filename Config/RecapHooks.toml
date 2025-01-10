@@ -1,0 +1,33 @@
+[host]
+name = "localhost"
+
+[host.resolver]
+
+# `include` is whitelist which causes all other rules to be ignored. It specifies the
+# exact list of host names that should be resolved to the above defined `host.name`
+# and everything else should be forwarded to normal hostname resolution
+# e.g. to replicate the original launcher configuration, only these hostnames would be
+# autoresolved to localhost, everything else would still go through normal hostname resolution.
+# include = [
+#    "config.darkspore.com",
+#    "content.darkspore.com",
+#    "api.darkspore.com",
+#    "gosredirector.ea.com",
+#    "gosredirector.scert.ea.com",
+#    "gosredirector.stest.ea.com",
+#    "gosredirector.online.ea.com",
+# ]
+include = [
+]
+
+# `exclude` is a blacklist, which is ignored in the presence of `include`.
+# if no `include` list was specified, the behavior is to resolve all host names to `host.name`
+# except for the host names defined under this list
+# e.g. suppose the goal is to really autoresolve every hostname from Darksproe to localhost
+# except for a couple legit requests that should be allowed to go through normal host resolution
+# exclude = [
+#     "some.legit.domain",
+#     "other.let.it.through"
+# ]
+exclude = [
+]
