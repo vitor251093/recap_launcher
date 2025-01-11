@@ -23,10 +23,12 @@ struct X509CertificateT;
 
 // WinSock2 typedefs
 typedef hostent*(WSAAPI* gethostbyname_t)(const char* name);
+typedef int(WSAAPI* connect_t)(SOCKET s, const sockaddr* name, int namelen);
 
 // Targets
 static gethostbyname_t orig_gethostbyname = gethostbyname;
 static gethostbyname_t detoured_gethostbyname = NULL;
+static connect_t orig_connect = connect;
 
 // Signature-based targets
 struct Target
@@ -39,7 +41,10 @@ struct Target
 // Configuration
 static const char* const configfile = "RecapHooks.toml";
 static const char* const localhost = "localhost";
+static const uint16_t http = 80;
+
 static std::string hostname;
+static uint16_t port;
 static std::vector<std::string> inclist;
 static std::vector<std::string> exclist;
 
@@ -130,6 +135,17 @@ hostent* WSAAPI detoured_gethostbyname_exclist(const char* name)
     return detoured_gethostbyname_impl(name);
 }
 
+int WSAAPI detoured_connect(SOCKET s, const sockaddr* name, int namelen)
+{
+    auto service = reinterpret_cast<sockaddr_in*>(const_cast<sockaddr*>(name));
+    dbgprintf("connect: %hu", ntohs(service->sin_port));
+    if (service->sin_port == htons(http))
+    {
+        service->sin_port = htons(port);
+    }
+    return orig_connect(s, name, namelen);
+}
+
 static Target targets[] = {
     {"8B 44 24 04 8B 4C 24 08 8B 54 24 0C 89 88", NULL, reinterpret_cast<void*>(detoured_SSL_CTX_set_verify)},
     {"8B 44 24 04 8B 80 E0 00 00 00 C3", NULL, reinterpret_cast<void*>(detoured_SSL_get_verify_result)},
@@ -168,6 +184,7 @@ void LoadHostRules(const toml::parse_result& config, const char* key, std::vecto
 void LoadConfig()
 {
     hostname = localhost;
+    port = http;
     detoured_gethostbyname = detoured_gethostbyname_impl;
 
     auto config = toml::parse_file(configfile);
@@ -178,6 +195,7 @@ void LoadConfig()
     }
 
     hostname = config["host"]["name"].value_or(localhost);
+    port = config["host"]["port"].value_or(http);
     // Whitelist
     LoadHostRules(config, "include", inclist);
     if (!inclist.empty())
@@ -216,6 +234,10 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID reserved)
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
         DetourAttach(&(PVOID&)orig_gethostbyname, detoured_gethostbyname);
+        if (port != http)
+        {
+            DetourAttach(&(PVOID&)orig_connect, detoured_connect);
+        }
         for (auto& target : targets)
         {
             target.original = FindSigInModule(GetModuleHandle(NULL), target.signature);
@@ -237,6 +259,10 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID reserved)
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
         DetourDetach(&(PVOID&)orig_gethostbyname, detoured_gethostbyname);
+        if (port != http)
+        {
+            DetourDetach(&(PVOID&)orig_connect, detoured_connect);
+        }
         for (auto& target : targets)
         {
             DetourDetach(&(PVOID&)target.original, target.detoured);
