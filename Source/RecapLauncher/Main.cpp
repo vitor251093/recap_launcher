@@ -49,7 +49,7 @@ int CDECL main(int argc, char** argv)
     SearchPathA(NULL, szExe, NULL, ARRAYSIZE(szFullExe), szFullExe, &pszFileExe);
     if (szFullExe[0] == '\0')
     {
-        printf("Darkspore.exe not found.");
+        printf("Darkspore.exe not found.\n");
         return -2;
     }
 
