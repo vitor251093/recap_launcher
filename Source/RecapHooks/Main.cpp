@@ -97,11 +97,12 @@ hostent* WSAAPI detoured_gethostbyname_impl(const char* name)
     {
         // Executed only first time
         hostent* resolved = orig_gethostbyname(hostname.c_str());
-        if (resolved->h_addr_list[0] != NULL)
+        if (resolved == NULL)
         {
-            addr.s_addr = *(u_long*)resolved->h_addr_list[0];
-            addr_list[0] = &addr;
+            return NULL;
         }
+        addr.s_addr = *(unsigned long*)resolved->h_addr_list[0];
+        addr_list[0] = &addr;
         host.h_name = NULL;
         host.h_aliases = NULL;
         host.h_addrtype = AF_INET;
