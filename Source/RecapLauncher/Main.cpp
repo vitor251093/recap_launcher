@@ -22,7 +22,8 @@ void PrintUsage()
 }
 
 bool runExeInNewCmdWindow(const char* exePath) {
-    std::string command = "cmd.exe /C start \"\" \"" + std::string(exePath) + "\"";
+    std::string exeName = std::filesystem::path(exePath).filename().string();
+    std::string command = "cmd.exe /C start \"\" \"" + exeName + "\"";
 
     STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi;
