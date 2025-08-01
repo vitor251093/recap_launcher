@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <strsafe.h>
 
+#include <string>
+#include <vector>
+#include <iostream>
+
 static const char* szDll = "RecapHooks.dll";
 static const char* szExeDefault = "Darkspore.exe";
 static const char* szServerExeDefault = "Server/recap_server.exe";
@@ -22,9 +26,11 @@ bool runExeInNewCmdWindow(const char* exePath) {
     STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi;
 
+    char cmdLine[1024];
+    strncpy_s(cmdLine, command.c_str(), sizeof(cmdLine) - 1);
     BOOL success = CreateProcessA(
         NULL,
-        (LPSTR)command.c_str(),
+        cmdLine,
         NULL,
         NULL,
         FALSE,

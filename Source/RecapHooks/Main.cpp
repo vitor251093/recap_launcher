@@ -9,9 +9,6 @@
 #include <toml++/toml.hpp>
 #include <winsock2.h>
 
-#include <string>
-#include <vector>
-
 #define MAX_PRINT_BUFFER_SIZE 1024
 
 // OpenSSL typedefs
