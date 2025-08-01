@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <filesystem>
 
 static const char* szDll = "RecapHooks.dll";
 static const char* szExeDefault = "Darkspore.exe";
