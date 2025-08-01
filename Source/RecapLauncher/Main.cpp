@@ -28,6 +28,9 @@ bool runExeInNewCmdWindow(const char* exePath) {
 
     char cmdLine[1024];
     strncpy_s(cmdLine, command.c_str(), sizeof(cmdLine) - 1);
+
+    std::string parentDir = std::filesystem::path(exePath).parent_path().string();
+
     BOOL success = CreateProcessA(
         NULL,
         cmdLine,
@@ -36,7 +39,7 @@ bool runExeInNewCmdWindow(const char* exePath) {
         FALSE,
         CREATE_NO_WINDOW,
         NULL,
-        NULL,
+        parentDir.empty() ? NULL : parentDir.c_str(),
         &si,
         &pi
     );
