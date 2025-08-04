@@ -1,3 +1,5 @@
+#include "Version.h"
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
@@ -5,23 +7,24 @@
 #include <stdio.h>
 #include <strsafe.h>
 
+#include <filesystem>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <filesystem>
 
 static const char* szDll = "RecapHooks.dll";
-static const char* szExeDefault = "Darkspore.exe";
+static const char* szGameExeDefault = "Darkspore.exe";
 static const char* szServerExeDefault = "Server/recap_server.exe";
 
 void PrintUsage()
 {
     printf("Usage: RecapLauncher.exe [--help] [--exe <path_to_exe>]\n\n");
     printf("Options:\n");
-    printf("--exe  Path to the Darkspore executable file (default: Darkspore.exe)\n");
+    printf("--game-exe    Path to the Darkspore executable file (default: Darkspore.exe)\n");
+    printf("--server-exe  Path to the ReCap server executable file (default: recap_server.exe)\n");
+    printf("--no-server   Disable launching the server before the game (default: ON)\n");
 }
 
-bool runExeInNewCmdWindow(const char* exePath) {
+bool RunExeInNewCmdWindow(const char* exePath) {
     std::string exeName = std::filesystem::path(exePath).filename().string();
     std::string command = "cmd.exe /C start \"\" \"" + exeName + "\"";
 
@@ -46,14 +49,14 @@ bool runExeInNewCmdWindow(const char* exePath) {
         &pi
     );
 
-    if (success) {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        return true;
-    } else {
-        std::cerr << "Failed to launch process. Error: " << GetLastError() << std::endl;
+    if (!success) {
+        printf("Failed to launch process. Error: %d\n", GetLastError());
         return false;
     }
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    return true;
 }
 
 int CDECL main(int argc, char** argv)
@@ -62,8 +65,9 @@ int CDECL main(int argc, char** argv)
     PROCESS_INFORMATION pi;
     CHAR szFullExe[1024] = "\0";
     PCHAR pszFileExe = NULL;
-    const char* szExe = szExeDefault;
+    const char* szGameExe = szGameExeDefault;
     const char* szServerExe = szServerExeDefault;
+    bool runServer = true;
 
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
@@ -71,13 +75,22 @@ int CDECL main(int argc, char** argv)
 
     for (int i = 1; i < argc; ++i)
     {
-        if ((_stricmp(argv[i], "--exe") == 0) && (++i < argc))
+        if ((_stricmp(argv[i], "--game-exe") == 0) && (++i < argc))
         {
-            szExe = argv[i];
+            szGameExe = argv[i];
         }
-        else if ((_stricmp(argv[i], "--server") == 0) && (++i < argc))
+        else if ((_stricmp(argv[i], "--server-exe") == 0) && (++i < argc))
         {
             szServerExe = argv[i];
+        }
+        else if ((_stricmp(argv[i], "--no-server") == 0))
+        {
+            runServer = false;
+        }
+        else if ((_stricmp(argv[i], "--version") == 0))
+        {
+            printf(RECAP_VERSION_STRING);
+            return 0;
         }
         else if (_stricmp(argv[i], "--help") == 0)
         {
@@ -92,15 +105,18 @@ int CDECL main(int argc, char** argv)
     }
 
     SetLastError(0);
-    SearchPathA(NULL, szExe, NULL, ARRAYSIZE(szFullExe), szFullExe, &pszFileExe);
+    SearchPathA(NULL, szGameExe, NULL, ARRAYSIZE(szFullExe), szFullExe, &pszFileExe);
     if (szFullExe[0] == '\0')
     {
         printf("Darkspore.exe not found.\n");
         return -2;
     }
 
-    // Launch server, if possible
-    runExeInNewCmdWindow(szServerExe);
+    if (runServer)
+    {
+        // Launch server, if possible
+        RunExeInNewCmdWindow(szServerExe);
+    }
 
     DWORD dwFlags = CREATE_DEFAULT_ERROR_MODE | CREATE_SUSPENDED;
     if (!DetourCreateProcessWithDllEx(szFullExe, NULL, NULL, NULL, TRUE, dwFlags, NULL, NULL, &si, &pi, szDll, NULL))
