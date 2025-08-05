@@ -4,12 +4,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 # Prevent in-source builds
-set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+set(CMAKE_DISABLE_SOURCE_CHANGES OFF)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 # Create compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 
-project(recap_launcher VERSION 0.1 LANGUAGES CXX)
+project(recap_launcher VERSION 0.2.0 LANGUAGES CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -78,6 +78,27 @@ target_link_libraries(RecapLauncher PRIVATE detours)
 set_target_properties(RecapLauncher PROPERTIES
     MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
     LINK_FLAGS "/SUBSYSTEM:CONSOLE")
+
+# Version info
+include(cmake/version_info.cmake)
+generate_version_header(
+    OUTPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Source/RecapLauncher/Version.h"
+    PREFIX "RECAP"
+    MAJOR ${PROJECT_VERSION_MAJOR}
+    MINOR ${PROJECT_VERSION_MINOR}
+    PATCH ${PROJECT_VERSION_PATCH})
+if(WIN32)
+    get_target_property(TARGET_BINARY_DIR RecapLauncher BINARY_DIR)
+    set(version_output_file "${TARGET_BINARY_DIR}/Version.rc")
+    generate_version_resource(RecapLauncher
+        OUTPUT_FILE "${version_output_file}"
+        NAME "Resurrection Capsule Launcher"
+        FILENAME "RecapLauncher.exe"
+        MAJOR_VERSION ${PROJECT_VERSION_MAJOR}
+        MINOR_VERSION ${PROJECT_VERSION_MINOR}
+        PATCH_VERSION ${PROJECT_VERSION_PATCH})
+    target_sources(RecapLauncher PRIVATE ${version_output_file})
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS RecapHooks RecapLauncher RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
